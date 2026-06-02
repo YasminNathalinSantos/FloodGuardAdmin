@@ -25,7 +25,7 @@ API REST em **.NET 9.0** para gerenciamento administrativo de ocorrências de en
 
 | Nome | RM |
 |------|----|
-| Yasmin Nathali | RM561365 |
+| Yasmin Nathalin | RM561365 |
 | Lucas da Silva Lima | RM562118 |
 | Riquelme Nascimento de Oliveira | RM565468 |
 | Enzo Franchin de Souza | RM565677 |
