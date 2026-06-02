@@ -1,12 +1,13 @@
 # 🌊 FloodGuard Admin — Módulo de Gestão de Ocorrências
 
-API REST em **.NET 10** para gerenciamento administrativo de ocorrências de enchente, equipes de resposta e ações emergenciais — parte da solução **FloodGuard**.
+API REST em **.NET 9.0** para gerenciamento administrativo de ocorrências de enchente, equipes de resposta e ações emergenciais — parte da solução **FloodGuard**.
 
 ---
 
 ## 📋 Índice
 
 - [Sobre o Projeto](#sobre-o-projeto)
+- [Regras de Negócio](#regras-de-negócio)
 - [Arquitetura](#arquitetura)
 - [Diagrama de Entidades (ER)](#diagrama-de-entidades-er)
 - [Diagrama de Fluxo da API](#diagrama-de-fluxo-da-api)
@@ -16,8 +17,28 @@ API REST em **.NET 10** para gerenciamento administrativo de ocorrências de enc
 - [Endpoints e Testes](#endpoints-e-testes)
 - [Tratamento de Erros](#tratamento-de-erros)
 - [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Equipe](#equipe)
+- [Links](#links)
 
 ---
+## 👥 Equipe
+
+| Nome | RM |
+|------|----|
+| Yasmin Nathali | RM561365 |
+| Lucas da Silva Lima | RM562118 |
+| Riquelme Nascimento de Oliveira | RM565468 |
+| Enzo Franchin de Souza | RM565677 |
+
+---
+
+## 🔗 Links
+
+| Recurso | URL |
+|---------|-----|
+| 🎥 **Vídeo de Demonstração** | Em breve |
+| 🎯 **Vídeo Pitch** | Em breve |
+| 📘 **Swagger UI** | https://localhost:7079/swagger |
 
 ## Sobre o Projeto
 
@@ -29,108 +50,111 @@ O **FloodGuard Admin** é um módulo administrativo que permite:
 
 ---
 
+## Regras de Negócio — Níveis de Risco
+
+| Nível de Severidade | Risco Calculado |
+|---------------------|-----------------|
+| 1 | 🟢 BAIXO |
+| 2 | 🟡 MÉDIO |
+| 3 | 🟠 ALTO |
+| 4 | 🔴 CRÍTICO |
+
+---
+
 ## Arquitetura
 
-O projeto segue a arquitetura **API REST com Controller → DbContext (EF Core) → Oracle DB**, igual ao padrão da solução de referência.
+O projeto segue a arquitetura **API REST com Controller → DbContext (EF Core) → Oracle DB**.
 
-```
-FloodGuardAdmin/
-├── Controllers/
-│   ├── OcorrenciasController.cs        ← CRUD de ocorrências + regras de negócio
-│   ├── EquipesRespostaController.cs     ← CRUD de equipes
-│   └── AcoesEmergenciaisController.cs  ← CRUD de ações emergenciais
-├── Data/
-│   └── AppDbContext.cs                 ← Configuração EF Core + relacionamentos
-├── Models/
-│   ├── Ocorrencia.cs                   ← Entidade com construtor rico + métodos de negócio
-│   ├── EquipeResposta.cs               ← Entidade com construtor rico
-│   └── AcaoEmergencial.cs             ← Entidade (lado N dos dois relacionamentos)
-├── Migrations/
-│   └── 20260601120000_InicializandoDatabase2tdspi.cs
-├── Program.cs                          ← Configuração da aplicação + OpenAPI/Scalar
-└── appsettings.json                    ← String de conexão Oracle
-```
+    FloodGuardAdmin/
+    ├── Controllers/
+    │   ├── OcorrenciasController.cs        ← CRUD de ocorrências + regras de negócio
+    │   ├── EquipesRespostaController.cs     ← CRUD de equipes
+    │   └── AcoesEmergenciaisController.cs  ← CRUD de ações emergenciais
+    ├── Data/
+    │   └── AppDbContext.cs                 ← Configuração EF Core + relacionamentos
+    ├── Models/
+    │   ├── Ocorrencia.cs                   ← Entidade com construtor rico + métodos de negócio
+    │   ├── EquipeResposta.cs               ← Entidade com construtor rico
+    │   └── AcaoEmergencial.cs             ← Entidade (lado N dos dois relacionamentos)
+    ├── Migrations/
+    │   └── 20260601120000_InicializandoDatabase2tdspi.cs
+    ├── Program.cs                          ← Configuração da aplicação + Swagger
+    └── appsettings.json                    ← String de conexão Oracle
 
 **Por que essa arquitetura?**
 Controller acessa o banco diretamente via `AppDbContext` (padrão Repository implícito do EF Core), mantendo o código simples, legível e dentro do escopo da disciplina.
-
 ---
 
 ## Diagrama de Entidades (ER)
 
-```
-┌──────────────────────────┐         ┌──────────────────────────────┐
-│  TBL_OCORRENCIAS_2TDSPI  │         │  TBL_EQUIPES_RESPOSTA_2TDSPI │
-├──────────────────────────┤         ├──────────────────────────────┤
-│ ID              PK       │         │ ID              PK            │
-│ TITULO                   │         │ NOME                         │
-│ LOCALIZACAO              │         │ ESPECIALIDADE                │
-│ NIVEL_SEVERIDADE (1-4)   │         │ CAPACIDADE_MAX               │
-│ STATUS                   │         │ DISPONIVEL                   │
-│ DATA_OCORRENCIA          │         └──────────────┬───────────────┘
-└────────────┬─────────────┘                        │
-             │ 1                                    │ 1
-             │                                      │
-             │ N                                    │ N
-             └───────────┬──────────────────────────┘
-                         │
-          ┌──────────────▼──────────────────────┐
-          │  TBL_ACOES_EMERGENCIAIS_2TDSPI       │
-          ├─────────────────────────────────────┤
-          │ ID              PK                   │
-          │ DESCRICAO                            │
-          │ TIPO_ACAO                            │
-          │ DATA_INICIO                          │
-          │ DATA_FIM                             │
-          │ STATUS_ACAO                          │
-          │ OCORRENCIA_ID       FK (CASCADE)     │
-          │ EQUIPE_RESPOSTA_ID  FK (RESTRICT)    │
-          └─────────────────────────────────────┘
-```
+    ┌──────────────────────────┐         ┌──────────────────────────────┐
+    │  TBL_OCORRENCIAS_2TDSPI  │         │  TBL_EQUIPES_RESPOSTA_2TDSPI │
+    ├──────────────────────────┤         ├──────────────────────────────┤
+    │ ID              PK       │         │ ID              PK            │
+    │ TITULO                   │         │ NOME                         │
+    │ LOCALIZACAO              │         │ ESPECIALIDADE                │
+    │ NIVEL_SEVERIDADE (1-4)   │         │ CAPACIDADE_MAX               │
+    │ STATUS                   │         │ DISPONIVEL                   │
+    │ DATA_OCORRENCIA          │         └──────────────┬───────────────┘
+    └────────────┬─────────────┘                        │
+                 │ 1                                    │ 1
+                 │                                      │
+                 │ N                                    │ N
+                 └───────────┬──────────────────────────┘
+                             │
+              ┌──────────────▼──────────────────────┐
+              │  TBL_ACOES_EMERGENCIAIS_2TDSPI       │
+              ├─────────────────────────────────────┤
+              │ ID              PK                   │
+              │ DESCRICAO                            │
+              │ TIPO_ACAO                            │
+              │ DATA_INICIO                          │
+              │ DATA_FIM                             │
+              │ STATUS_ACAO                          │
+              │ OCORRENCIA_ID       FK (CASCADE)     │
+              │ EQUIPE_RESPOSTA_ID  FK (RESTRICT)    │
+              └─────────────────────────────────────┘
 
 ### Relacionamentos implementados
 
 | Relacionamento | Descrição | Delete Behavior |
 |---|---|---|
-| `Ocorrencia` 1:N `AcaoEmergencial` | Uma ocorrência pode ter várias ações | **CASCADE** — deletar ocorrência remove as ações |
-| `EquipeResposta` 1:N `AcaoEmergencial` | Uma equipe pode executar várias ações | **RESTRICT** — não deixa deletar equipe com ações |
+| Ocorrencia 1:N AcaoEmergencial | Uma ocorrência pode ter várias ações | **CASCADE** — deletar ocorrência remove as ações |
+| EquipeResposta 1:N AcaoEmergencial | Uma equipe pode executar várias ações | **RESTRICT** — não deixa deletar equipe com ações |
 
 ---
 
 ## Diagrama de Fluxo da API
 
-```
-Cliente (Scalar / Postman / Frontend)
-        │
-        │  HTTP Request
-        ▼
-┌───────────────────┐
-│    Controller     │  ← Valida ModelState, trata erros de negócio
-│  (API Layer)      │
-└────────┬──────────┘
-         │
-         │  Consulta / Persistência
-         ▼
-┌───────────────────┐
-│   AppDbContext    │  ← EF Core gerencia SQL, migrations, relacionamentos
-│  (Data Layer)     │
-└────────┬──────────┘
-         │
-         │  Oracle SQL
-         ▼
-┌───────────────────┐
-│  Oracle XE 21c    │  ← Banco relacional com FK e CASCADE configurados
-│  (Database)       │
-└───────────────────┘
-```
-
----
+    Cliente (Swagger / Postman / Frontend)
+            │
+            │  HTTP Request
+            ▼
+    ┌───────────────────┐
+    │    Controller     │  ← Valida ModelState, trata erros de negócio
+    │  (API Layer)      │
+    └────────┬──────────┘
+             │
+             │  Consulta / Persistência
+             ▼
+    ┌───────────────────┐
+    │   AppDbContext    │  ← EF Core gerencia SQL, migrations, relacionamentos
+    │  (Data Layer)     │
+    └────────┬──────────┘
+             │
+             │  Oracle SQL
+             ▼
+    ┌───────────────────┐
+    │   Oracle FIAP     │  ← Banco relacional com FK e CASCADE configurados
+    │  (Database)       │
+    └───────────────────┘
+    ---
 
 ## Requisitos
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Oracle Database XE 21c](https://www.oracle.com/database/technologies/xe-downloads.html) (local ou Docker)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - Visual Studio 2022 ou VS Code
+- Acesso ao banco Oracle FIAP
 
 ---
 
@@ -138,39 +162,28 @@ Cliente (Scalar / Postman / Frontend)
 
 ### 1. Clone o repositório
 
-```bash
-git clone https://github.com/seu-usuario/FloodGuardAdmin.git
-cd FloodGuardAdmin
-```
+    git clone https://github.com/seu-usuario/FloodGuardAdmin.git
+    cd FloodGuardAdmin
 
 ### 2. Configure a string de conexão
 
-Edite `FloodGuardAdmin/appsettings.json`:
+Crie o arquivo FloodGuardAdmin/appsettings.json com base no appsettings.Example.json:
 
-```json
-{
-  "ConnectionStrings": {
-    "OracleConnection": "User Id=SYSTEM;Password=SUA_SENHA;Data Source=localhost:1521/XEPDB1;"
-  }
-}
-```
+    {
+      "ConnectionStrings": {
+        "OracleConnection": "User Id=SEU_RM;Password=SUA_SENHA;Data Source=oracle.fiap.com.br:1521/ORCL;"
+      }
+    }
 
-### 3. Execute a Migration
+### 3. Execute a aplicação
 
-```bash
-cd FloodGuardAdmin
-dotnet ef database update
-```
+    dotnet run
 
-### 4. Execute a aplicação
+As tabelas são criadas automaticamente no banco ao iniciar a aplicação.
 
-```bash
-dotnet run
-```
+### 4. Acesse a documentação interativa
 
-### 5. Acesse a documentação interativa
-
-Abra no navegador: **https://localhost:7079/swagger**
+Abra no navegador: https://localhost:7079/swagger
 
 ---
 
@@ -180,14 +193,13 @@ As migrations controlam a evolução do banco de dados ao longo do tempo.
 
 | Comando | Descrição |
 |---|---|
-| `dotnet ef migrations add NomeDaMigration` | Cria uma nova migration |
-| `dotnet ef database update` | Aplica todas as migrations pendentes |
-| `dotnet ef database update NomeDaMigration` | Volta para uma migration específica |
-| `dotnet ef migrations remove` | Remove a última migration (se não aplicada) |
+| dotnet ef migrations add NomeDaMigration | Cria uma nova migration |
+| dotnet ef database update | Aplica todas as migrations pendentes |
+| dotnet ef database update NomeDaMigration | Volta para uma migration específica |
+| dotnet ef migrations remove | Remove a última migration (se não aplicada) |
 
-**Migration criada:** `20260601120000_InicializandoDatabase2tdspi`  
+**Migration criada:** 20260601120000_InicializandoDatabase2tdspi
 Cria as 3 tabelas com PKs, FKs, índices e Oracle Identity (auto-increment).
-
 ---
 
 ## Endpoints e Testes
@@ -195,131 +207,103 @@ Cria as 3 tabelas com PKs, FKs, índices e Oracle Identity (auto-increment).
 ### 🔴 Ocorrências
 
 #### GET /api/ocorrencias
-```http
-GET http://localhost:5079/api/ocorrencias
-```
-**Resposta 200:**
-```json
-[
-  {
-    "id": 1,
-    "titulo": "Alagamento na Av. Paulista",
-    "localizacao": "Av. Paulista, 1000 - São Paulo/SP",
-    "nivelSeveridade": 3,
-    "status": "Aberta",
-    "dataOcorrencia": "2025-06-01T08:00:00Z"
-  }
-]
-```
+    GET https://localhost:7079/api/ocorrencias
 
 #### POST /api/ocorrencias
-```http
-POST http://localhost:5079/api/ocorrencias
-Content-Type: application/json
+    POST https://localhost:7079/api/ocorrencias
+    Content-Type: application/json
 
-{
-  "titulo": "Alagamento na Av. Paulista",
-  "localizacao": "Av. Paulista, 1000 - São Paulo/SP",
-  "nivelSeveridade": 3
-}
-```
-**Resposta 201:** objeto criado com ID gerado automaticamente.
+    {
+      "titulo": "Alagamento na Av. Paulista",
+      "localizacao": "Av. Paulista, 1000 - São Paulo/SP",
+      "nivelSeveridade": 3
+    }
+
+Resposta 201: objeto criado com ID gerado automaticamente.
 
 #### PUT /api/ocorrencias/{id}/status
-```http
-PUT http://localhost:5079/api/ocorrencias/1/status
-Content-Type: application/json
+    PUT https://localhost:7079/api/ocorrencias/1/status
+    Content-Type: application/json
 
-"EmAtendimento"
-```
-**Resposta 204 (NoContent)**
+    "EmAtendimento"
 
 #### PUT /api/ocorrencias/{id}/escalar
-```http
-PUT http://localhost:5079/api/ocorrencias/1/escalar
-```
-**Resposta 204 (NoContent)** — eleva o NivelSeveridade em +1
+    PUT https://localhost:7079/api/ocorrencias/1/escalar
+
+Eleva o NivelSeveridade em +1.
 
 #### DELETE /api/ocorrencias/{id}
-```http
-DELETE http://localhost:5079/api/ocorrencias/1
-```
-**Resposta 204 (NoContent)** — remove a ocorrência e todas as ações (CASCADE)
+    DELETE https://localhost:7079/api/ocorrencias/1
+
+Remove a ocorrência e todas as ações vinculadas (CASCADE).
 
 ---
 
 ### 🟢 Equipes de Resposta
 
-#### POST /api/equipesresposta
-```http
-POST http://localhost:5079/api/equipesresposta
-Content-Type: application/json
+#### GET /api/equipesresposta
+    GET https://localhost:7079/api/equipesresposta
 
-{
-  "nome": "Equipe Alpha - Resgate",
-  "especialidade": "Resgate",
-  "capacidadeMax": 12
-}
-```
+#### POST /api/equipesresposta
+    POST https://localhost:7079/api/equipesresposta
+    Content-Type: application/json
+
+    {
+      "nome": "Equipe Alpha - Resgate",
+      "especialidade": "Resgate",
+      "capacidadeMax": 12
+    }
 
 #### PUT /api/equipesresposta/{id}/disponibilidade
-```http
-PUT http://localhost:5079/api/equipesresposta/1/disponibilidade
-```
-**Resposta 204** — alterna Disponivel entre true/false
+    PUT https://localhost:7079/api/equipesresposta/1/disponibilidade
+
+Alterna disponível/indisponível.
 
 #### DELETE /api/equipesresposta/{id}
-```http
-DELETE http://localhost:5079/api/equipesresposta/1
-```
-**Resposta 400** se houver ações vinculadas (RESTRICT), **204** se não houver.
+    DELETE https://localhost:7079/api/equipesresposta/1
+
+Retorna 400 se houver ações vinculadas (RESTRICT).
 
 ---
 
 ### 🔵 Ações Emergenciais
 
 #### GET /api/acoesemergenciais/ocorrencia/{ocorrenciaId}
-```http
-GET http://localhost:5079/api/acoesemergenciais/ocorrencia/1
-```
+    GET https://localhost:7079/api/acoesemergenciais/ocorrencia/1
 
 #### POST /api/acoesemergenciais
-```http
-POST http://localhost:5079/api/acoesemergenciais
-Content-Type: application/json
+    POST https://localhost:7079/api/acoesemergenciais
+    Content-Type: application/json
 
-{
-  "descricao": "Evacuação de 50 famílias do bairro Vila Esperança",
-  "tipoAcao": "Evacuacao",
-  "dataInicio": "2025-06-01T08:00:00",
-  "statusAcao": "Planejada",
-  "ocorrenciaId": 1,
-  "equipeRespostaId": 1
-}
-```
+    {
+      "descricao": "Evacuação de 50 famílias do bairro Vila Esperança",
+      "tipoAcao": "Evacuacao",
+      "dataInicio": "2025-06-01T08:00:00",
+      "statusAcao": "Planejada",
+      "ocorrenciaId": 1,
+      "equipeRespostaId": 1
+    }
 
 #### PUT /api/acoesemergenciais/{id}/status
-```http
-PUT http://localhost:5079/api/acoesemergenciais/1/status
-Content-Type: application/json
+    PUT https://localhost:7079/api/acoesemergenciais/1/status
+    Content-Type: application/json
 
-"Concluida"
-```
-**Resposta 204** — define DataFim automaticamente quando status = "Concluida"
+    "Concluida"
 
+Define DataFim automaticamente quando status = "Concluida".
 ---
 
 ## Tratamento de Erros
 
-| Cenário | Código HTTP | Exemplo |
+| Cenário | Código HTTP | Resposta |
 |---|---|---|
-| Recurso não encontrado | 404 Not Found | `GET /api/ocorrencias/999` |
-| Dados inválidos (ModelState) | 400 Bad Request | POST sem campo obrigatório |
-| Regra de negócio violada | 400 Bad Request | Escalar severidade já crítica |
-| Status inválido | 400 Bad Request | `"EmAndamento"` (não existe) |
-| Exclusão com FK RESTRICT | 400 Bad Request | Deletar equipe com ações |
-| Criado com sucesso | 201 Created | POST bem-sucedido |
-| Atualizado com sucesso | 204 No Content | PUT / DELETE bem-sucedido |
+| Recurso não encontrado | 404 Not Found | { "erro": "Ocorrência com Id 99 não encontrada." } |
+| Dados inválidos | 400 Bad Request | { "erro": "Dados inválidos.", "detalhes": [...] } |
+| Regra de negócio violada | 400 Bad Request | { "erro": "A ocorrência já está no nível crítico." } |
+| Status inválido | 400 Bad Request | { "erro": "...", "statusValidos": [...] } |
+| Exclusão com FK RESTRICT | 400 Bad Request | { "erro": "...", "solucao": "..." } |
+| Criado com sucesso | 201 Created | Objeto criado com ID gerado |
+| Operação bem-sucedida | 200 OK | { "mensagem": "..." } |
 
 ---
 
@@ -327,19 +311,10 @@ Content-Type: application/json
 
 | Tecnologia | Versão | Uso |
 |---|---|---|
-| .NET / ASP.NET Core | 10.0 | Framework da API |
-| Entity Framework Core | 10.0.5 | ORM / Migrations |
-| Oracle.EntityFrameworkCore | 10.23.26200 | Driver Oracle |
-| Oracle Database XE | 21c | Banco de dados relacional |
-| Scalar.AspNetCore | 2.14.10 | Documentação interativa |
-| Microsoft.AspNetCore.OpenApi | 10.0.5 | Geração do OpenAPI spec |
+| .NET / ASP.NET Core | 9.0 | Framework da API |
+| Entity Framework Core | 9.0.5 | ORM / Migrations |
+| Oracle.EntityFrameworkCore | 9.23.60 | Driver Oracle |
+| Oracle Database FIAP | - | Banco de dados relacional |
+| Swashbuckle.AspNetCore | 6.9.0 | Swagger UI |
 
 ---
-
-## Integrantes
-
-| Nome | RM |
-|---|---|
-| Nome do Integrante 1 | RM000000 |
-| Nome do Integrante 2 | RM000000 |
-| Nome do Integrante 3 | RM000000 |
