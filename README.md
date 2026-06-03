@@ -1,4 +1,4 @@
-# 🌊 FloodGuard Admin — Módulo de Gestão de Ocorrências
+# 🌊 Aquasafe API FloodGuard Admin — Módulo de Gestão de Ocorrências
 
 API REST em **.NET 9.0** para gerenciamento administrativo de ocorrências de enchente, equipes de resposta e ações emergenciais — parte da solução **FloodGuard**.
 
