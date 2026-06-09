@@ -37,7 +37,7 @@ API REST em **.NET 9.0** para gerenciamento administrativo de ocorrências de en
 | Recurso | URL |
 |---------|-----|
 | 🎥 **Vídeo de Demonstração** | https://youtu.be/_Irr4I0SmmE?feature=shared |
-| 🎯 **Vídeo Pitch** | Em breve |
+| 🎯 **Vídeo Pitch** | https://youtube.com/shorts/alVfyZpt_Fo?si=UX72gAIiatG2NKX2 |
 | 📘 **Swagger UI** | https://localhost:7079/swagger |
 
 ## Sobre o Projeto
